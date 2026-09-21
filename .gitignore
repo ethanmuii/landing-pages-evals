@@ -1,0 +1,48 @@
+# Dependencies and generated output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+playwright-report/
+test-results/
+
+# Markdown documents
+*.[mM][dD]
+*.[mM][aA][rR][kK][dD][oO][wW][nN]
+
+# Package manifests, lockfiles, and archives
+package.json
+package-lock.json
+npm-shrinkwrap.json
+yarn.lock
+pnpm-lock.yaml
+bun.lock
+bun.lockb
+*.tgz
+
+# Environment, registry credentials, and local secrets
+.env
+.env.*
+.npmrc
+.netrc
+.pypirc
+.aws/
+.ssh/
+secrets/
+.secrets/
+credentials.json
+credentials.*.json
+service-account*.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+
+# Logs and local editor/OS artifacts
+*.log
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
