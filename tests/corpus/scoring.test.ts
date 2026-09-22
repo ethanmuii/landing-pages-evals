@@ -79,8 +79,7 @@ it('finds no violation on any control page', () => {
   expect(controlFails).toEqual([]);
 });
 
-it('scores nothing without the pages root, which is the defect this guards', () => {
-  const unrooted = scoreFindings(findings, labels);
-  expect(unrooted.truePositives).toBe(0);
-  expect(unrooted.falseNegatives).toBe(15);
+it('rejects omitted pages roots for the actual CLI findings', () => {
+  // @ts-expect-error Missing roots must fail for typed and untyped callers.
+  expect(() => scoreFindings(findings, labels)).toThrow('pagesRoot');
 });

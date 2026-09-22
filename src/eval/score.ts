@@ -29,12 +29,16 @@ function rate(numerator: number, denominator: number): number | null {
 
 // pagesRoot is the directory handed to the CLI's --pages flag. Findings carry
 // the path the CLI walked to reach them, labels carry the page's own name, and
-// without the root to rebase against every comparison here would fail.
+// the explicit root lets the scorer compare both paths in the same frame.
 export function scoreFindings(
   findings: readonly Finding[],
   labels: readonly EvalLabel[],
-  pagesRoot?: string,
+  pagesRoot: string,
 ): EvalScore {
+  if (typeof pagesRoot !== 'string' || pagesRoot.trim().length === 0) {
+    throw new TypeError('pagesRoot must be a nonblank directory path.');
+  }
+
   const reviewFindings = findings.filter((finding) => finding.verdict === 'needs_review');
 
   // A pass is not a claim that the page is broken, so it is dropped here rather

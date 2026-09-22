@@ -21,7 +21,7 @@ then checked by three independent rules against a frozen baseline:
 
 | Rule | Compares | Checker |
 | --- | --- | --- |
-| content | Normalized visible text and DOM subtree | `deterministic_content_normalizer` |
+| content | Normalized visible text only | `deterministic_content_normalizer` |
 | appearance | 26 longhand CSS properties plus bounding box | `playwright_appearance_proxy` |
 | position | `parentTag`, `previousSiblingTag`, `nextSiblingTag` | `relational_position_anchor` |
 
@@ -100,10 +100,10 @@ Segment-wise comparison is what stops `footer[1]` matching `footer[10]`.
 Labels live in `src/eval`, which nothing under `src/validation` or `src/cli`
 imports, so the validator never sees the answers it is scored against.
 
-`needs_review` findings are excluded from precision and recall and reported
-separately as a review rate, so a validator that escalates everything cannot show
-perfect precision. Mislocated findings — right lock and rule, wrong `domPath` — are
-reported as their own count alongside the scores, because "invented a violation"
+`needs_review` findings are set aside rather than matched or counted as true or
+false positives. Labels covered only by review findings remain unmatched and
+count as false negatives. Review rate is reported separately. Mislocated findings
+— right lock and rule, wrong `domPath` — are reported as their own count alongside the scores, because "invented a violation"
 and "found the real one but lost its location" are different failures.
 
 Current corpus scores: 15 true positives, 0 false negatives, 0 mislocated, 1 false
@@ -115,12 +115,17 @@ definition.
 `scoreFindings` takes the `--pages` directory as its third argument and rebases
 each finding's path before comparing, because the CLI reports
 `src/fixtures/corpus/pages/content-01.html` where a label says `content-01.html`.
-The argument is optional; omitting it scores every page as a miss.
+The argument is required. Omitting it is a TypeScript error; missing, non-string,
+or blank values throw at runtime before scoring. The scorer performs path
+operations only: it does not require the directory or page files to exist.
+
+For mock tests, use a finding path such as `pages/pricing.html`, a label path
+`pricing.html`, and call `scoreFindings(findings, labels, "pages")`.
 
 ## Tests
 
-    npm test                              # everything, 835 tests
-    npx vitest run --project unit         # 749 fast tests, no browser
+    npm test                              # everything, 840 tests
+    npx vitest run --project unit         # 754 fast tests, no browser
     npx vitest run --project browser      # 86 browser tests, one file at a time
 
 The browser project is serialized deliberately. Rendering a 10.5 MB page costs
@@ -152,12 +157,11 @@ live site.
 - **`domPath` is absolute from `body`.** Suitable for a static prototype with
   hand-written labels. Production needs paths relative to the locked root, to
   survive generation shifts above the lock boundary.
-- **The `class` attribute is stripped wholesale** during normalization. Whether
-  that is right depends on how Flint ingests sites: safe against compiler variance
-  for raw HTML snapshots, redundant if elements are mapped to component-library
-  tokens upstream. Built without visibility into that pipeline, so stripping is the
-  safest decoupled choice. The fallback, if semantic classes must survive, is to
-  sort them and compare as a set.
+- **Structural normalization is outside the gate.** The retained canonicalizer
+  strips classes, style, and data attributes for isolated structural comparisons.
+  The active content rule compares only normalized browser-visible text; it never
+  compares canonical DOM subtrees. The structural judge utilities are also
+  outside the gate, and an asynchronous diagnostic service has not been built.
 - **`data-locked` is assumed durable.** A missing attribute is read as a missing
   section. A generator that drops unrecognised `data-*` attributes, or a build-stage
   sanitiser, would produce the same symptom with the section intact. This is an

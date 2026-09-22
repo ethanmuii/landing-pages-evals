@@ -3,6 +3,9 @@ import { labelSchema, type EvalLabel } from '../../src/eval/label.js';
 import { evalRates, scoreFindings } from '../../src/eval/score.js';
 import { findingSchema, type Finding } from '../../src/findings/finding.js';
 
+// Pure path operations: this directory and its files need not exist.
+const MOCK_PAGES_ROOT = 'pages';
+
 const makeFinding = (overrides: Record<string, unknown> = {}): Finding => findingSchema.parse({
   lockId: 'footer-legal',
   rule: 'content',
@@ -23,7 +26,7 @@ const makeReview = (overrides: Record<string, unknown> = {}): Finding => makeFin
 });
 
 const makeLabel = (overrides: Record<string, unknown> = {}): EvalLabel => labelSchema.parse({
-  pagePath: 'pages/pricing.html',
+  pagePath: 'pricing.html',
   lockId: 'footer-legal',
   rule: 'content',
   domPath: 'body/main[1]',
@@ -34,7 +37,7 @@ describe('counting one page', () => {
   it('scores a fail that lands on its label as a true positive', () => {
     const finding = makeFinding();
     const label = makeLabel();
-    const score = scoreFindings([finding], [label]);
+    const score = scoreFindings([finding], [label], MOCK_PAGES_ROOT);
 
     expect(score).toEqual({
       truePositives: 1,
@@ -52,7 +55,7 @@ describe('counting one page', () => {
 
   it('scores a label nobody found as a false negative', () => {
     const label = makeLabel();
-    const score = scoreFindings([], [label]);
+    const score = scoreFindings([], [label], MOCK_PAGES_ROOT);
 
     expect(score.falseNegatives).toBe(1);
     expect(score.unmatchedLabels).toEqual([label]);
@@ -61,7 +64,7 @@ describe('counting one page', () => {
 
   it('scores a fail nobody labelled as a false positive', () => {
     const finding = makeFinding();
-    const score = scoreFindings([finding], []);
+    const score = scoreFindings([finding], [], MOCK_PAGES_ROOT);
 
     expect(score.falsePositives).toBe(1);
     expect(score.unmatchedFailFindings).toEqual([finding]);
@@ -77,7 +80,7 @@ describe('findings that do not claim a violation', () => {
       failing,
       makeFinding({ verdict: 'pass', rule: 'position', checker: 'relational_position_anchor', reason: 'Anchors match.' }),
     ];
-    const score = scoreFindings(findings, [makeLabel()]);
+    const score = scoreFindings(findings, [makeLabel()], MOCK_PAGES_ROOT);
 
     expect(score.truePositives).toBe(1);
     expect(score.falsePositives).toBe(0);
@@ -88,7 +91,7 @@ describe('findings that do not claim a violation', () => {
   it('sets needs_review aside instead of matching or counting it', () => {
     const review = makeReview();
     const failing = makeFinding();
-    const score = scoreFindings([review, failing], [makeLabel()]);
+    const score = scoreFindings([review, failing], [makeLabel()], MOCK_PAGES_ROOT);
 
     expect(score.truePositives).toBe(1);
     expect(score.falsePositives).toBe(0);
@@ -98,21 +101,21 @@ describe('findings that do not claim a violation', () => {
   });
 
   it('leaves a label unmatched when only a review finding lines up with it', () => {
-    const score = scoreFindings([makeReview()], [makeLabel()]);
+    const score = scoreFindings([makeReview()], [makeLabel()], MOCK_PAGES_ROOT);
 
     expect(score).toMatchObject({ truePositives: 0, falsePositives: 0, falseNegatives: 1, needsReview: 1 });
     expect(evalRates(score)).toEqual({ precision: null, recall: 0, reviewRate: 1 });
   });
 
   it('computes a review rate against the findings that were decided', () => {
-    const score = scoreFindings([makeReview(), makeFinding()], [makeLabel()]);
+    const score = scoreFindings([makeReview(), makeFinding()], [makeLabel()], MOCK_PAGES_ROOT);
     expect(evalRates(score).reviewRate).toBe(0.5);
   });
 });
 
 describe('one-to-one pairing', () => {
   it('lets one finding satisfy only one of two identical labels', () => {
-    const score = scoreFindings([makeFinding()], [makeLabel(), makeLabel()]);
+    const score = scoreFindings([makeFinding()], [makeLabel(), makeLabel()], MOCK_PAGES_ROOT);
 
     expect(score.truePositives).toBe(1);
     expect(score.falseNegatives).toBe(1);
@@ -122,7 +125,7 @@ describe('one-to-one pairing', () => {
   it('leaves the second of two matching findings as a false positive', () => {
     const first = makeFinding();
     const second = makeFinding({ domPath: 'body/main[1]/footer[4]' });
-    const score = scoreFindings([first, second], [makeLabel()]);
+    const score = scoreFindings([first, second], [makeLabel()], MOCK_PAGES_ROOT);
 
     expect(score.truePositives).toBe(1);
     expect(score.falsePositives).toBe(1);
@@ -134,7 +137,7 @@ describe('one-to-one pairing', () => {
 describe('mislocation', () => {
   it('counts a right-rule wrong-place fail as a false positive, a false negative and mislocated', () => {
     const finding = makeFinding({ domPath: 'body/aside[2]/footer[1]' });
-    const score = scoreFindings([finding], [makeLabel()]);
+    const score = scoreFindings([finding], [makeLabel()], MOCK_PAGES_ROOT);
 
     expect(score.falsePositives).toBe(1);
     expect(score.falseNegatives).toBe(1);
@@ -143,7 +146,7 @@ describe('mislocation', () => {
 
   it('does not call a fail on another rule mislocated', () => {
     const finding = makeFinding({ rule: 'position', checker: 'relational_position_anchor', reason: 'Anchors moved.' });
-    const score = scoreFindings([finding], [makeLabel()]);
+    const score = scoreFindings([finding], [makeLabel()], MOCK_PAGES_ROOT);
 
     expect(score.falsePositives).toBe(1);
     expect(score.falseNegatives).toBe(1);
@@ -151,14 +154,14 @@ describe('mislocation', () => {
   });
 
   it('does not call a fail on another lock mislocated', () => {
-    const score = scoreFindings([makeFinding({ lockId: 'hero-headline' })], [makeLabel()]);
+    const score = scoreFindings([makeFinding({ lockId: 'hero-headline' })], [makeLabel()], MOCK_PAGES_ROOT);
     expect(score.mislocated).toBe(0);
   });
 });
 
 describe('rates', () => {
   it('returns null rather than NaN when nothing was scored', () => {
-    expect(evalRates(scoreFindings([], []))).toEqual({ precision: null, recall: null, reviewRate: null });
+    expect(evalRates(scoreFindings([], [], MOCK_PAGES_ROOT))).toEqual({ precision: null, recall: null, reviewRate: null });
   });
 });
 
@@ -167,14 +170,14 @@ describe('determinism', () => {
     const findings = [makeFinding(), makeReview(), makeFinding({ lockId: 'hero-headline' })];
     const labels = [makeLabel(), makeLabel({ lockId: 'nav-links', domPath: 'body/nav[1]' })];
 
-    expect(scoreFindings(findings, labels)).toEqual(scoreFindings(findings, labels));
+    expect(scoreFindings(findings, labels, MOCK_PAGES_ROOT)).toEqual(scoreFindings(findings, labels, MOCK_PAGES_ROOT));
   });
 
   it('keeps matched pairs in label order', () => {
     const footer = makeFinding();
     const hero = makeFinding({ lockId: 'hero-headline', domPath: 'body/header[1]/h1[1]' });
     const heroLabel = makeLabel({ lockId: 'hero-headline', domPath: 'body/header[1]' });
-    const score = scoreFindings([footer, hero], [heroLabel, makeLabel()]);
+    const score = scoreFindings([footer, hero], [heroLabel, makeLabel()], MOCK_PAGES_ROOT);
 
     expect(score.matchedPairs.map((pair) => pair.label)).toEqual([heroLabel, makeLabel()]);
   });
@@ -204,12 +207,13 @@ describe('scoring against the paths the CLI actually emits', () => {
       .toEqual({ precision: 1, recall: 1, reviewRate: 0 });
   });
 
-  it('counts every label as missed when the root is omitted, which is the bug this guards', () => {
-    const score = scoreFindings([cliFinding], [corpusLabel]);
+  it('rejects an omitted root instead of silently scoring every label as missed', () => {
+    // @ts-expect-error The root is required for TypeScript callers as well.
+    expect(() => scoreFindings([cliFinding], [corpusLabel])).toThrow('pagesRoot');
+  });
 
-    expect(score.truePositives).toBe(0);
-    expect(score.falsePositives).toBe(1);
-    expect(score.falseNegatives).toBe(1);
+  it.each(['', '   ', '\t', undefined, null])('rejects invalid roots even for empty inputs: %j', (root) => {
+    expect(() => scoreFindings([], [], root as string)).toThrow('pagesRoot');
   });
 
   it('still reports mislocation against a rebased page path', () => {
