@@ -28,8 +28,10 @@ export function extractRelationalMarkers(element: Element): RelationalMarkers {
   };
 }
 
-// Layout wrappers around the lock are not neighbours, so the lock's real
-// neighbours are those of its outermost transparent wrapper: the macro node.
+// A lock alone inside layout wrappers has no neighbours of its own, so its real
+// neighbours are the wrapper's: the macro node. A lock that already sits beside
+// real siblings keeps them, because climbing out of a shared container would
+// discard the very elements the anchor is meant to describe.
 function findMacroNode(element: Element): { macro: Element; parent: Element } {
   let macro = element;
   for (;;) {
@@ -37,11 +39,35 @@ function findMacroNode(element: Element): { macro: Element; parent: Element } {
     if (parent === null || !isTag(parent)) {
       throw new Error(`Lock element <${element.name}> has no opaque ancestor`);
     }
-    if (!isTransparentWrapper(parent) && !isNonRendering(parent)) {
+    const opaqueParent = !isTransparentWrapper(parent) && !isNonRendering(parent);
+    if (opaqueParent) {
       return { macro, parent };
+    }
+    if (hasElementSibling(macro)) {
+      return { macro, parent: nearestOpaqueAncestor(element) };
     }
     macro = parent;
   }
+}
+
+function hasElementSibling(node: Element): boolean {
+  for (const direction of ['prev', 'next'] as const) {
+    for (let sibling = node[direction]; sibling !== null; sibling = sibling[direction]) {
+      if (isTag(sibling) && !isNonRendering(sibling)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function nearestOpaqueAncestor(element: Element): Element {
+  for (let node = element.parent; node !== null && isTag(node); node = node.parent) {
+    if (!isTransparentWrapper(node) && !isNonRendering(node)) {
+      return node;
+    }
+  }
+  throw new Error(`Lock element <${element.name}> has no opaque ancestor`);
 }
 
 function siblingAnchor(macro: Element, direction: Direction): string | null {

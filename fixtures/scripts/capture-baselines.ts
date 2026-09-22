@@ -1,5 +1,5 @@
 import { measureLock } from '../../src/browser/extract.js';
-import { BROWSER_PAGE_TIMEOUT_MS, withRenderedPage, type RenderSession } from '../../src/browser/session.js';
+import { BROWSER_CAPTURE_TIMEOUT_MS, withRenderedPage, type RenderSession } from '../../src/browser/session.js';
 import { baselineSchema, type Baseline } from '../../src/contracts/baseline.js';
 import { lockIdSchema } from '../../src/findings/identity.js';
 import { extractRelationalMarkers } from '../../src/locks/anchors.js';
@@ -37,15 +37,15 @@ export async function captureBaselines(
       if (target === undefined || matches.length !== 1) {
         throw new Error(`Expected exactly one rendered baseline element for lock ${JSON.stringify(lockId)}.`);
       }
-      await target.waitFor({ state: 'visible', timeout: BROWSER_PAGE_TIMEOUT_MS });
+      await target.waitFor({ state: 'visible', timeout: BROWSER_CAPTURE_TIMEOUT_MS });
       // Revealing an element can initiate an additional font load.
       await page.waitForFunction(async () => {
         await document.fonts.ready;
         return true;
-      }, undefined, { timeout: BROWSER_PAGE_TIMEOUT_MS });
+      }, undefined, { timeout: BROWSER_CAPTURE_TIMEOUT_MS });
       const measurement = await measureLock(page, lockId);
       captures.push({ lockId, baseline: baselineSchema.parse({ ...measurement, ...markers }) });
     }
     return captures;
-  });
+  }, BROWSER_CAPTURE_TIMEOUT_MS);
 }

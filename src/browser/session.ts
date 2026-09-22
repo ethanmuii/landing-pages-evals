@@ -5,6 +5,12 @@ export const BROWSER_DEVICE_SCALE = 1;
 export const BROWSER_LAUNCH_TIMEOUT_MS = 30_000;
 export const BROWSER_PAGE_TIMEOUT_MS = 10_000;
 
+// Offline baseline preparation loads a whole captured homepage, which is orders
+// of magnitude larger than the generated pages the gate sees, so it gets its own
+// budget. The gate keeps the shorter one: a generated page that takes this long
+// is hung, not busy.
+export const BROWSER_CAPTURE_TIMEOUT_MS = 60_000;
+
 const MOTIONLESS_STYLESHEET = `
 *, *::before, *::after {
   animation-duration: 0s !important;
@@ -28,13 +34,17 @@ export async function withRenderSession<T>(run: (session: RenderSession) => Prom
   }
 }
 
-export async function renderHtml(session: RenderSession, html: string): Promise<Page> {
+export async function renderHtml(
+  session: RenderSession,
+  html: string,
+  timeoutMs: number = BROWSER_PAGE_TIMEOUT_MS,
+): Promise<Page> {
   const page = await session.browser.newPage({
     viewport: { ...BROWSER_VIEWPORT },
     deviceScaleFactor: BROWSER_DEVICE_SCALE,
   });
   try {
-    page.setDefaultTimeout(BROWSER_PAGE_TIMEOUT_MS);
+    page.setDefaultTimeout(timeoutMs);
 
     // Fixtures arrive through setContent. Blocking remote resources keeps
     // baseline capture and validation reproducible with inline assets.
@@ -47,14 +57,14 @@ export async function renderHtml(session: RenderSession, html: string): Promise<
       await route.abort();
     });
 
-    await page.setContent(html, { waitUntil: 'domcontentloaded' });
+    await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
 
     // Zero motion before awaiting font readiness and measuring the page.
     await page.addStyleTag({ content: MOTIONLESS_STYLESHEET });
     await page.waitForFunction(async () => {
       await document.fonts.ready;
       return true;
-    }, undefined, { timeout: BROWSER_PAGE_TIMEOUT_MS });
+    }, undefined, { timeout: timeoutMs });
     return page;
   } catch (error) {
     await page.close();
@@ -66,8 +76,9 @@ export async function withRenderedPage<T>(
   session: RenderSession,
   html: string,
   run: (page: Page) => Promise<T>,
+  timeoutMs: number = BROWSER_PAGE_TIMEOUT_MS,
 ): Promise<T> {
-  const page = await renderHtml(session, html);
+  const page = await renderHtml(session, html, timeoutMs);
   try {
     return await run(page);
   } finally {
