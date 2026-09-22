@@ -1,6 +1,7 @@
 import type { Finding } from '../findings/finding.js';
 import type { EvalLabel } from './label.js';
 import { findingMatchesLabel, isSegmentPrefix } from './match.js';
+import { relativePagePath } from './page-path.js';
 
 export interface EvalScore {
   truePositives: number;
@@ -26,7 +27,14 @@ function rate(numerator: number, denominator: number): number | null {
   return denominator === 0 ? null : numerator / denominator;
 }
 
-export function scoreFindings(findings: readonly Finding[], labels: readonly EvalLabel[]): EvalScore {
+// pagesRoot is the directory handed to the CLI's --pages flag. Findings carry
+// the path the CLI walked to reach them, labels carry the page's own name, and
+// without the root to rebase against every comparison here would fail.
+export function scoreFindings(
+  findings: readonly Finding[],
+  labels: readonly EvalLabel[],
+  pagesRoot?: string,
+): EvalScore {
   const reviewFindings = findings.filter((finding) => finding.verdict === 'needs_review');
 
   // A pass is not a claim that the page is broken, so it is dropped here rather
@@ -38,7 +46,7 @@ export function scoreFindings(findings: readonly Finding[], labels: readonly Eva
   const matchedPairs: { finding: Finding; label: EvalLabel }[] = [];
   const unmatchedLabels: EvalLabel[] = [];
   for (const label of labels) {
-    const candidate = candidates.find((entry) => !entry.consumed && findingMatchesLabel(entry.finding, label));
+    const candidate = candidates.find((entry) => !entry.consumed && findingMatchesLabel(entry.finding, label, pagesRoot));
     if (candidate === undefined) {
       unmatchedLabels.push(label);
       continue;
@@ -53,7 +61,7 @@ export function scoreFindings(findings: readonly Finding[], labels: readonly Eva
   // is already a false positive and its label already a false negative, and it
   // is counted here a second time to say why that pair failed to meet.
   const mislocated = unmatchedFailFindings.filter((finding) => unmatchedLabels.some((label) =>
-    label.pagePath === finding.pagePath
+    label.pagePath === relativePagePath(finding.pagePath, pagesRoot)
     && label.lockId === finding.lockId
     && label.rule === finding.rule
     && !isSegmentPrefix(label.domPath, finding.domPath))).length;

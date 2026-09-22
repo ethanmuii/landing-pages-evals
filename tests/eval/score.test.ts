@@ -179,3 +179,61 @@ describe('determinism', () => {
     expect(score.matchedPairs.map((pair) => pair.label)).toEqual([heroLabel, makeLabel()]);
   });
 });
+
+describe('scoring against the paths the CLI actually emits', () => {
+  // listPages() joins the --pages directory onto each entry, so a finding says
+  // src/fixtures/corpus/pages/content-01.html where its label says content-01.html.
+  const cliFinding = makeFinding({ pagePath: 'src/fixtures/corpus/pages/content-01.html' });
+  const corpusLabel = makeLabel({ pagePath: 'content-01.html' });
+
+  it('pairs a CLI finding with its label once the root is supplied', () => {
+    const score = scoreFindings([cliFinding], [corpusLabel], 'src/fixtures/corpus/pages');
+
+    expect(score.truePositives).toBe(1);
+    expect(score.falsePositives).toBe(0);
+    expect(score.falseNegatives).toBe(0);
+  });
+
+  it('scores a perfect run as perfect rather than as a total miss', () => {
+    const findings = ['content-01.html', 'content-02.html', 'content-03.html']
+      .map((name) => makeFinding({ pagePath: `src/fixtures/corpus/pages/${name}` }));
+    const labels = ['content-01.html', 'content-02.html', 'content-03.html']
+      .map((name) => makeLabel({ pagePath: name }));
+
+    expect(evalRates(scoreFindings(findings, labels, 'src/fixtures/corpus/pages')))
+      .toEqual({ precision: 1, recall: 1, reviewRate: 0 });
+  });
+
+  it('counts every label as missed when the root is omitted, which is the bug this guards', () => {
+    const score = scoreFindings([cliFinding], [corpusLabel]);
+
+    expect(score.truePositives).toBe(0);
+    expect(score.falsePositives).toBe(1);
+    expect(score.falseNegatives).toBe(1);
+  });
+
+  it('still reports mislocation against a rebased page path', () => {
+    const strayed = makeFinding({
+      pagePath: 'src/fixtures/corpus/pages/content-01.html',
+      domPath: 'body/aside[9]/footer[1]',
+    });
+    const score = scoreFindings([strayed], [corpusLabel], 'src/fixtures/corpus/pages');
+
+    expect(score.mislocated).toBe(1);
+    expect(score.falsePositives).toBe(1);
+    expect(score.falseNegatives).toBe(1);
+  });
+
+  it('keeps two pages distinct under the same root', () => {
+    const findings = [
+      makeFinding({ pagePath: 'src/fixtures/corpus/pages/content-01.html' }),
+      makeFinding({ pagePath: 'src/fixtures/corpus/pages/content-02.html' }),
+    ];
+    const labels = [makeLabel({ pagePath: 'content-02.html' })];
+    const score = scoreFindings(findings, labels, 'src/fixtures/corpus/pages');
+
+    expect(score.truePositives).toBe(1);
+    expect(score.matchedPairs[0]!.finding.pagePath).toBe('src/fixtures/corpus/pages/content-02.html');
+    expect(score.falsePositives).toBe(1);
+  });
+});
