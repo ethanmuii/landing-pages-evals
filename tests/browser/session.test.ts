@@ -69,6 +69,35 @@ describe('page lifecycle', () => {
   }, BROWSER_TEST_TIMEOUT_MS);
 });
 
+describe('font readiness', () => {
+  it('awaits document.fonts.ready before exposing the page for measurement', async () => {
+    const html = `<p id="status">waiting</p><script>
+      Object.defineProperty(document.fonts, 'ready', {
+        get() {
+          return new Promise(resolve => setTimeout(() => {
+            document.querySelector('#status').textContent = 'fonts ready';
+            resolve(document.fonts);
+          }, 100));
+        }
+      });
+    </script>`;
+    await withRenderedPage(shared.session, html, async (page) => {
+      expect(await page.locator('#status').textContent()).toBe('fonts ready');
+    });
+  }, BROWSER_TEST_TIMEOUT_MS);
+
+  it('closes a page when its readiness check fails before the callback', async () => {
+    const contextCount = shared.session.browser.contexts().length;
+    const html = `<script>
+      Object.defineProperty(document.fonts, 'ready', {
+        get() { throw new Error('Font readiness failed'); }
+      });
+    </script>`;
+    await expect(renderHtml(shared.session, html)).rejects.toThrow('Font readiness failed');
+    expect(shared.session.browser.contexts()).toHaveLength(contextCount);
+  }, BROWSER_TEST_TIMEOUT_MS);
+});
+
 describe('viewport', () => {
   it('exposes the agreed viewport and device scale as constants', () => {
     expect(BROWSER_VIEWPORT).toEqual({ width: 1280, height: 720 });

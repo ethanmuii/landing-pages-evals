@@ -33,27 +33,33 @@ export async function renderHtml(session: RenderSession, html: string): Promise<
     viewport: { ...BROWSER_VIEWPORT },
     deviceScaleFactor: BROWSER_DEVICE_SCALE,
   });
-  page.setDefaultTimeout(BROWSER_PAGE_TIMEOUT_MS);
+  try {
+    page.setDefaultTimeout(BROWSER_PAGE_TIMEOUT_MS);
 
-  // Fixtures arrive through setContent, so a page that reaches out over http(s)
-  // is fetching something the run cannot depend on: blocking every such request
-  // keeps measurements offline, identical between baseline and validation, and
-  // free of whatever a remote host happens to be serving today.
-  await page.route('**/*', async (route) => {
-    const url = route.request().url();
-    if (url.startsWith('data:') || url.startsWith('about:')) {
-      await route.continue();
-      return;
-    }
-    await route.abort();
-  });
+    // Fixtures arrive through setContent. Blocking remote resources keeps
+    // baseline capture and validation reproducible with inline assets.
+    await page.route('**/*', async (route) => {
+      const url = route.request().url();
+      if (url.startsWith('data:') || url.startsWith('about:')) {
+        await route.continue();
+        return;
+      }
+      await route.abort();
+    });
 
-  await page.setContent(html, { waitUntil: 'domcontentloaded' });
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
 
-  // Measurement reads one instant of a page, so motion is zeroed rather than
-  // waited out; injecting after setContent puts this sheet last in the cascade.
-  await page.addStyleTag({ content: MOTIONLESS_STYLESHEET });
-  return page;
+    // Zero motion before awaiting font readiness and measuring the page.
+    await page.addStyleTag({ content: MOTIONLESS_STYLESHEET });
+    await page.waitForFunction(async () => {
+      await document.fonts.ready;
+      return true;
+    }, undefined, { timeout: BROWSER_PAGE_TIMEOUT_MS });
+    return page;
+  } catch (error) {
+    await page.close();
+    throw error;
+  }
 }
 
 export async function withRenderedPage<T>(
