@@ -1,0 +1,39 @@
+Capture the complete real homepage at https://modal.com/ as a high-fidelity,
+self-contained HTML artifact named clean-page.html. It will be saved locally as
+src/fixtures/inputs/clean-page.html and rendered offline in Chromium at a
+1280 x 720 CSS-pixel viewport with device scale factor 1.
+
+This is a capture task, not a redesign or mock-page generation task.
+
+Requirements:
+1. Capture the complete rendered homepage, including its real content, element
+   structure, footer, surrounding layout, and CSS cascade. Do not recreate the
+   page from a screenshot, substitute mock sections, or approximate its styles.
+2. Preserve the entire footer and its parent/sibling context. If the outer footer
+   lacks data-locked, add data-locked="modal-footer". If it already has the
+   attribute, preserve its exact value. Do not add tracking attributes elsewhere.
+3. Embed the actual stylesheets in inline <style> elements, preserving cascade
+   order, media queries, font definitions, and required CSS variables. Resolve
+   stylesheet imports and asset URLs so none require external fetching.
+4. Embed the actual required images, fonts, and other rendering assets as data
+   URIs using their real bytes and MIME types. Preserve inline SVGs. Include
+   resources referenced through CSS, srcset, and other resource-loading fields.
+   Do not fabricate Base64 data or substitute unavailable assets.
+5. The saved page must retain its captured appearance with networking disabled.
+   Ensure client-side scripts cannot replace the captured content or require
+   remote hydration to render it. Preserve ordinary navigation destinations;
+   navigation links are not external rendering dependencies.
+6. If browser/file tools are available, verify the saved artifact offline at the
+   specified viewport, including footer visibility and document.fonts.ready.
+   Clearly report any verification you cannot perform.
+7. Do not generate baseline-contract.json or modal-footer.html. Our local script
+   extracts the footer and measures its visible text, 26 approved computed CSS
+   longhands, dimensions, and relational markers from this HTML.
+8. Do not infer measurements or produce an additional global design-token file.
+9. If your tools cannot access the full page, retrieve required asset bytes, or
+   create the complete artifact, stop and explain exactly what access or files
+   are missing. Do not claim that a partial reconstruction is a faithful capture.
+
+Deliver the complete clean-page.html as a downloadable file if supported.
+Otherwise return the complete HTML without Markdown fences or truncation.
+Disclose any missing resources or unverified fidelity separately.
