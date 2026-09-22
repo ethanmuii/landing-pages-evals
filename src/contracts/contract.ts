@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { lockIdSchema, pagePathSchema } from '../findings/identity.js';
+import { baselineSchema } from './baseline.js';
 
 export const baselinePathSchema = pagePathSchema;
 
@@ -12,6 +13,7 @@ export const policySchema = z.strictObject({
 export const lockSchema = z.strictObject({
   lockId: lockIdSchema,
   baselinePath: baselinePathSchema,
+  baseline: baselineSchema,
   policy: policySchema,
 });
 

@@ -18,3 +18,13 @@ export async function loadContract(contractFilePath: string): Promise<LoadedCont
 export async function loadBaseline(contract: LoadedContract, baselinePath: string): Promise<string> {
   return readFile(resolveBaselinePath(contract.contractFilePath, baselinePath), 'utf8');
 }
+
+export async function loadLockBaseline(contract: LoadedContract, lockId: string) {
+  const lock = contract.locks.find((entry) => entry.lockId === lockId);
+  if (!lock) {
+    throw new Error(`Lock ${JSON.stringify(lockId)} is absent from contract ${contract.contractFilePath}`);
+  }
+
+  const html = await loadBaseline(contract, lock.baselinePath);
+  return { lockId: lock.lockId, html, baseline: lock.baseline };
+}

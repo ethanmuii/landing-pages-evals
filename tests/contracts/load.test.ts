@@ -3,13 +3,15 @@ import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
-import { loadBaseline, loadContract } from '../../src/contracts/load.js';
+import { loadBaseline, loadContract, loadLockBaseline } from '../../src/contracts/load.js';
+import { createBaseline } from '../fixtures/baseline.js';
 
 let directory: string;
 let contractFilePath: string;
 const locks = [{
   lockId: 'footer-legal', baselinePath: 'baselines/footer.html',
   policy: { content: true, appearance: true, position: true },
+  baseline: createBaseline(),
 }];
 
 beforeEach(async () => {
@@ -49,6 +51,45 @@ describe('contract file loading', () => {
 });
 
 describe('baseline file loading', () => {
+  it('pairs each requested lock with its own HTML and frozen observations', async () => {
+    const first = { ...locks[0]!, baselinePath: 'footer.html' };
+    const second = {
+      ...first, lockId: 'header', baselinePath: 'header.html',
+      baseline: { ...createBaseline(), width: 960, height: 80, previousSiblingTag: null, nextSiblingTag: 'main' },
+    };
+    await writeFile(contractFilePath, JSON.stringify([first, second]));
+    await writeFile(join(directory, 'footer.html'), '<footer data-locked="footer-legal">Footer</footer>');
+    await writeFile(join(directory, 'header.html'), '<header data-locked="header">Header</header>');
+    const loaded = await loadContract(contractFilePath);
+    await expect(loadLockBaseline(loaded, 'header')).resolves.toEqual({
+      lockId: 'header', html: '<header data-locked="header">Header</header>', baseline: second.baseline,
+    });
+    await expect(loadLockBaseline(loaded, 'footer-legal')).resolves.toEqual({
+      lockId: 'footer-legal', html: '<footer data-locked="footer-legal">Footer</footer>', baseline: first.baseline,
+    });
+  });
+
+  it('throws when the requested lock has no contract entry', async () => {
+    const loaded = await loadContract(contractFilePath);
+    await expect(loadLockBaseline(loaded, 'unknown-lock')).rejects.toThrow('absent from contract');
+  });
+
+  it('throws when a referenced lock fragment is missing', async () => {
+    const loaded = await loadContract(contractFilePath);
+    await expect(loadLockBaseline(loaded, 'footer-legal')).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('throws when frozen observations are incomplete or contain unknown fields', async () => {
+    for (const baseline of [
+      { ...createBaseline(), width: undefined },
+      { ...createBaseline(), computedStyles: { padding: '8px' } },
+      { ...createBaseline(), viewport: 1280 },
+    ]) {
+      await writeFile(contractFilePath, JSON.stringify([{ ...locks[0], baseline }]));
+      await expect(loadContract(contractFilePath)).rejects.toBeInstanceOf(ZodError);
+    }
+  });
+
   it('reads the contract-relative fixture unchanged even after the working directory changes', async () => {
     const html = '<footer data-locked="footer-legal">© Example\n</footer>';
     await mkdir(join(directory, 'baselines'));

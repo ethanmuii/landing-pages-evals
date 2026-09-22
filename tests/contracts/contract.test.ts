@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { contractSchema, lockSchema, policySchema } from '../../src/contracts/contract.js';
+import { createBaseline } from '../fixtures/baseline.js';
 
 const policy = { content: true, appearance: true, position: true };
-const lock = { lockId: 'footer-legal', baselinePath: 'baselines/footer.html', policy };
+const lock = { lockId: 'footer-legal', baselinePath: 'baselines/footer.html', policy, baseline: createBaseline() };
 
 describe('global brand contract', () => {
   it('accepts the same lock array without any page or route configuration', () => {
@@ -20,7 +21,7 @@ describe('global brand contract', () => {
     expect(lockSchema.parse(exact)).toEqual(exact);
   });
 
-  it.each(['lockId', 'baselinePath', 'policy'])('requires explicit %s', (field) => {
+  it.each(['lockId', 'baselinePath', 'policy', 'baseline'])('requires explicit %s', (field) => {
     const incomplete: Record<string, unknown> = { ...lock };
     delete incomplete[field];
     expect(lockSchema.safeParse(incomplete).success).toBe(false);
