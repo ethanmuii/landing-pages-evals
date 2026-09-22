@@ -2,6 +2,7 @@ import type { Baseline } from '../../src/contracts/baseline.js';
 
 export function createBaseline(): Baseline {
   return {
+    visibleText: 'Legal',
     width: 1280,
     height: 160.5,
     parentTag: 'body',

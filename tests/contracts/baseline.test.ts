@@ -8,7 +8,7 @@ describe('frozen baseline observations', () => {
     expect(baselineSchema.parse(baseline)).toEqual(baseline);
   });
 
-  it.each(['width', 'height', 'computedStyles', 'parentTag', 'previousSiblingTag', 'nextSiblingTag'])(
+  it.each(['visibleText', 'width', 'height', 'computedStyles', 'parentTag', 'previousSiblingTag', 'nextSiblingTag'])(
     'requires explicit %s', (field) => {
       const incomplete: Record<string, unknown> = createBaseline();
       delete incomplete[field];
