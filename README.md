@@ -1,7 +1,6 @@
 # landing-pages-evals
 
-Enforcement layer for locked sections. Given a generated page and a section marked
-`data-locked`, it answers one question: did the lock hold?
+Enforcement layer for locked sections. Given a company's homepage and marked 'data-locked' section, the validator checks whether the locked page stays the exact same. DISCLAIMER: Currently, the prototype is shown only with modal.com
 
 ## Why this exists
 
@@ -25,7 +24,7 @@ then checked by three independent rules against a frozen baseline:
 | appearance | 26 longhand CSS properties plus bounding box | `playwright_appearance_proxy` |
 | position | `parentTag`, `previousSiblingTag`, `nextSiblingTag` | `relational_position_anchor` |
 
-The gate is entirely deterministic. It makes no Anthropic API calls and never
+The gate is entirely deterministic. It makes no Anthropic API calls (will be added in a future iteration) and never
 escalates structural drift. If all three rules pass, the lock passes.
 
 ## Requirements
@@ -88,7 +87,7 @@ which drives the CLI over the corpus and scores what it wrote.
 
 ## Eval harness
 
-A label carries `pagePath`, `lockId`, `rule`, and `domPath` — exactly the fields
+A label carries `pagePath`, `lockId`, `rule`, and `domPath` exactly the fields
 the matcher compares, and nothing a human would have to keep in sync. One label per
 expected violation; a control page carries no labels, which is what makes it a
 control.
