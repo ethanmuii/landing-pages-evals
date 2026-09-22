@@ -142,7 +142,7 @@ Measurements establish parity with the supplied local capture, not fidelity to t
 live site.
 
 ## Known limitations
-
+- **Generalizing to any locked parts (besides footers) and other customer websites**: A generated page should always have a locked-section in the HTML. If it does, we do a recursive equality between locked section's AST tree in both the generated page and source of truth i.e the customer's actual website. This does a 1-1 check to make sure nothing is changed. 
 - **Same box, different internal layout.** A fixed-size card whose logos are
   re-arranged from a row into a stack has identical text, identical styles on the
   locked node, and an identical bounding box. It passes. Closing this needs
