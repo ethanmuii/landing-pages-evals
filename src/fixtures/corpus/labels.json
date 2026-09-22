@@ -1,0 +1,92 @@
+[
+  {
+    "pagePath": "content-01.html",
+    "lockId": "modal-footer",
+    "rule": "content",
+    "domPath": "body/div[1]/div[2]/footer[5]"
+  },
+  {
+    "pagePath": "content-02.html",
+    "lockId": "modal-footer",
+    "rule": "content",
+    "domPath": "body/div[1]/div[2]/footer[5]"
+  },
+  {
+    "pagePath": "content-03.html",
+    "lockId": "modal-footer",
+    "rule": "content",
+    "domPath": "body/div[1]/div[2]/footer[5]"
+  },
+  {
+    "pagePath": "content-04.html",
+    "lockId": "modal-footer",
+    "rule": "content",
+    "domPath": "body/div[1]/div[2]/footer[5]"
+  },
+  {
+    "pagePath": "content-05.html",
+    "lockId": "modal-footer",
+    "rule": "content",
+    "domPath": "body/div[1]/div[2]/footer[5]"
+  },
+  {
+    "pagePath": "appearance-01.html",
+    "lockId": "modal-footer",
+    "rule": "appearance",
+    "domPath": "body/div[1]/div[2]/footer[5]"
+  },
+  {
+    "pagePath": "appearance-02.html",
+    "lockId": "modal-footer",
+    "rule": "appearance",
+    "domPath": "body/div[1]/div[2]/footer[5]"
+  },
+  {
+    "pagePath": "appearance-03.html",
+    "lockId": "modal-footer",
+    "rule": "appearance",
+    "domPath": "body/div[1]/div[2]/footer[5]"
+  },
+  {
+    "pagePath": "appearance-04.html",
+    "lockId": "modal-footer",
+    "rule": "appearance",
+    "domPath": "body/div[1]/div[2]/footer[5]"
+  },
+  {
+    "pagePath": "appearance-05.html",
+    "lockId": "modal-footer",
+    "rule": "appearance",
+    "domPath": "body/div[1]/div[2]/footer[5]"
+  },
+  {
+    "pagePath": "position-01.html",
+    "lockId": "modal-footer",
+    "rule": "position",
+    "domPath": "body/div[1]/div[2]/section[5]/footer[1]"
+  },
+  {
+    "pagePath": "position-02.html",
+    "lockId": "modal-footer",
+    "rule": "position",
+    "domPath": "body/div[1]/div[2]/footer[6]"
+  },
+  {
+    "pagePath": "position-03.html",
+    "lockId": "modal-footer",
+    "rule": "position",
+    "domPath": "body/div[1]/div[2]/footer[5]"
+  },
+  {
+    "pagePath": "position-04.html",
+    "lockId": "modal-footer",
+    "rule": "position",
+    "domPath": "body/div[1]/div[2]/div[5]/footer[1]"
+  },
+  {
+    "pagePath": "position-05.html",
+    "lockId": "modal-footer",
+    "rule": "position",
+    "domPath": "body/div[1]/div[2]/footer[4]"
+  }
+]
