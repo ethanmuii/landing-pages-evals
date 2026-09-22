@@ -51,3 +51,8 @@ Thumbs.db
 # Restore by following fixtures/scripts/homepage-capture-prompt.txt, then strip
 # data:video payloads (keeping poster images) and place the result here.
 src/fixtures/inputs/clean-page.html
+
+# Generated eval corpus: 264 MB of full-page copies, one per mutation. Rebuilt
+# byte-identically by fixtures/scripts/build-corpus.ts from the untracked
+# clean-page.html, so the pages are reproducible rather than archived.
+src/fixtures/corpus/pages/
