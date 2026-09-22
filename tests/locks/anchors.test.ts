@@ -223,3 +223,64 @@ describe('schema conformance', () => {
     expect(relationalMarkersSchema.safeParse(markersFor(html)).success).toBe(true);
   });
 });
+
+describe('non-rendering elements', () => {
+  it.each([
+    ['script', '<script></script>'],
+    ['style', '<style></style>'],
+    ['template', '<template></template>'],
+    ['link', '<link>'],
+    ['meta', '<meta>'],
+    ['noscript', '<noscript></noscript>'],
+  ])('walks past a %s sibling to the real previous sibling', (_tag, markup) => {
+    const markers = markersFor(
+      `<main><section>A</section>${markup}<footer data-locked="lock">F</footer></main>`,
+    );
+    expect(markers.previousSiblingTag).toBe('section');
+  });
+
+  it.each([
+    ['script', '<script></script>'],
+    ['style', '<style></style>'],
+    ['template', '<template></template>'],
+    ['link', '<link>'],
+    ['meta', '<meta>'],
+    ['noscript', '<noscript></noscript>'],
+  ])('walks past a %s sibling to the real next sibling', (_tag, markup) => {
+    const markers = markersFor(
+      `<main><footer data-locked="lock">F</footer>${markup}<aside>B</aside></main>`,
+    );
+    expect(markers.nextSiblingTag).toBe('aside');
+  });
+
+  it('reports null when a side holds only a style element', () => {
+    const markers = markersFor('<main><style></style><footer data-locked="lock">F</footer></main>');
+    expect(markers).toEqual({ parentTag: 'main', previousSiblingTag: null, nextSiblingTag: null });
+  });
+
+  it('treats a wrapper of only non-rendering children as empty and skips it', () => {
+    const markers = markersFor(
+      '<main><section>S</section><div><script></script><style></style></div><footer data-locked="lock">F</footer></main>',
+    );
+    expect(markers.previousSiblingTag).toBe('section');
+  });
+
+  it('descends a previous wrapper to its last rendering descendant, not a script', () => {
+    const markers = markersFor(
+      '<main><div><script></script><ul><li>1</li></ul></div><footer data-locked="lock">F</footer></main>',
+    );
+    expect(markers.previousSiblingTag).toBe('ul');
+  });
+
+  it('descends past a trailing script in a previous wrapper', () => {
+    const markers = markersFor(
+      '<main><div><ul><li>1</li></ul><script></script></div><footer data-locked="lock">F</footer></main>',
+    );
+    expect(markers.previousSiblingTag).toBe('ul');
+  });
+
+  it('anchors on an svg sibling because svg renders', () => {
+    const markers = markersFor('<main><svg></svg><footer data-locked="lock">F</footer></main>');
+    expect(markers).toEqual({ parentTag: 'main', previousSiblingTag: 'svg', nextSiblingTag: null });
+  });
+});

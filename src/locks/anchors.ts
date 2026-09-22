@@ -2,6 +2,7 @@ import { isTag, type Element } from 'domhandler';
 import type { RelationalMarkers } from '../contracts/relational-markers.js';
 
 const TRANSPARENT_TAGS = new Set(['div', 'span']);
+const NON_RENDERING_TAGS = new Set(['script', 'style', 'template', 'link', 'meta', 'noscript']);
 const IDENTITY_ATTRIBUTES = ['role', 'id', 'aria-label', 'data-locked'];
 
 type Direction = 'prev' | 'next';
@@ -9,6 +10,13 @@ type Direction = 'prev' | 'next';
 export function isTransparentWrapper(element: Element): boolean {
   return TRANSPARENT_TAGS.has(element.name)
     && !IDENTITY_ATTRIBUTES.some((attribute) => attribute in element.attribs);
+}
+
+// A transparent wrapper still contributes the content it holds, whereas a
+// non-rendering element paints nothing at all: it is passed over entirely
+// instead of being looked through, so the two categories stay separate.
+function isNonRendering(element: Element): boolean {
+  return NON_RENDERING_TAGS.has(element.name);
 }
 
 export function extractRelationalMarkers(element: Element): RelationalMarkers {
@@ -29,7 +37,7 @@ function findMacroNode(element: Element): { macro: Element; parent: Element } {
     if (parent === null || !isTag(parent)) {
       throw new Error(`Lock element <${element.name}> has no opaque ancestor`);
     }
-    if (!isTransparentWrapper(parent)) {
+    if (!isTransparentWrapper(parent) && !isNonRendering(parent)) {
       return { macro, parent };
     }
     macro = parent;
@@ -38,7 +46,7 @@ function findMacroNode(element: Element): { macro: Element; parent: Element } {
 
 function siblingAnchor(macro: Element, direction: Direction): string | null {
   for (let sibling = macro[direction]; sibling !== null; sibling = sibling[direction]) {
-    if (!isTag(sibling)) {
+    if (!isTag(sibling) || isNonRendering(sibling)) {
       continue;
     }
     const anchor = isTransparentWrapper(sibling) ? edgeOpaqueDescendant(sibling, direction) : sibling;
@@ -57,6 +65,9 @@ function edgeOpaqueDescendant(wrapper: Element, direction: Direction): Element |
     children.reverse();
   }
   for (const child of children) {
+    if (isNonRendering(child)) {
+      continue;
+    }
     const found = isTransparentWrapper(child) ? edgeOpaqueDescendant(child, direction) : child;
     if (found !== null) {
       return found;
