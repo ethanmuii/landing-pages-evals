@@ -6,7 +6,9 @@ Return valid JSON only, without Markdown fences or conversational text, suitable
 for saving directly as baseline-contract.json.
 
 The root must be an array of lock objects. Each lock object has exactly:
-- lockId: "modal-footer", matching data-locked="modal-footer" on the entire footer.
+- lockId: the exact supplied data-locked attribute value, without trimming or renaming.
+  If the original footer lacks that attribute, manually annotate the local fixture
+  with data-locked="modal-footer" before browser capture.
 - baselinePath: the supplied path to the isolated HTML fragment.
 - policy: { "content": true, "appearance": true, "position": true }.
 - baseline: an object with exactly the following fields:
