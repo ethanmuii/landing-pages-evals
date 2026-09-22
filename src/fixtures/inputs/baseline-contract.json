@@ -1,0 +1,47 @@
+[
+  {
+    "lockId": "modal-footer",
+    "baselinePath": "modal-footer.html",
+    "baseline": {
+      "visibleText": "AI infrastructure that developers love © Modal 2026 Products Inference Sandboxes Training Notebooks Batch Core Platform Resources Documentation Changelog Pricing Slack Community Articles GPU Glossary LLM Engine Advisor Model Library Company About Blog Careers Events Privacy Policy Security & Privacy Terms Popular Examples Serve your own LLM API Create custom art of your pet Deploy OpenCode agents in a cloud Sandbox",
+      "width": 1280,
+      "height": 489.5,
+      "computedStyles": {
+        "color": "rgb(221, 255, 220)",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "border-top-color": "rgb(221, 255, 220)",
+        "border-right-color": "rgb(221, 255, 220)",
+        "border-bottom-color": "rgb(221, 255, 220)",
+        "border-left-color": "rgb(221, 255, 220)",
+        "font-family": "\"Inter Variable\", ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "font-size": "16px",
+        "font-weight": "500",
+        "line-height": "24px",
+        "padding-top": "0px",
+        "padding-right": "0px",
+        "padding-bottom": "0px",
+        "padding-left": "0px",
+        "margin-top": "0px",
+        "margin-right": "0px",
+        "margin-bottom": "0px",
+        "margin-left": "0px",
+        "border-top-width": "0px",
+        "border-right-width": "0px",
+        "border-bottom-width": "0px",
+        "border-left-width": "0px",
+        "border-top-left-radius": "0px",
+        "border-top-right-radius": "0px",
+        "border-bottom-right-radius": "0px",
+        "border-bottom-left-radius": "0px"
+      },
+      "parentTag": "body",
+      "previousSiblingTag": "section",
+      "nextSiblingTag": null
+    },
+    "policy": {
+      "content": true,
+      "appearance": true,
+      "position": true
+    }
+  }
+]

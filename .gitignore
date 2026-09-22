@@ -46,3 +46,8 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Captured source page: 10.5 MB, supplied externally rather than generated.
+# Restore by following fixtures/scripts/homepage-capture-prompt.txt, then strip
+# data:video payloads (keeping poster images) and place the result here.
+src/fixtures/inputs/clean-page.html
