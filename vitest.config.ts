@@ -12,6 +12,7 @@ const BROWSER_TESTS = [
   'tests/fixtures/export-modal-fixture.test.ts',
   'tests/cli/run.test.ts',
   'tests/corpus/corpus.test.ts',
+  'tests/corpus/scoring.test.ts',
 ];
 
 const DEFAULT_EXCLUDE = ['**/node_modules/**', '**/dist/**'];
