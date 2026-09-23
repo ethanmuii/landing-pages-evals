@@ -1,6 +1,7 @@
 # Dependencies and generated output
 node_modules/
 dist/
+findings.json
 coverage/
 *.tsbuildinfo
 playwright-report/
@@ -10,9 +11,7 @@ test-results/
 *.[mM][dD]
 *.[mM][aA][rR][kK][dD][oO][wW][nN]
 
-# Package manifests, lockfiles, and archives
-package.json
-package-lock.json
+# Alternate package manifests, lockfiles, and archives
 npm-shrinkwrap.json
 yarn.lock
 pnpm-lock.yaml

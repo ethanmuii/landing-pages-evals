@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Locked section validator</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px; background: #f4f5f7; color: #18212e; font: 16px/1.5 system-ui, sans-serif; }
+  h1 { margin: 0; font-size: 24px; } p { margin: 6px 0 16px; }
+  header, .toolbar, .preview-title { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .toolbar { justify-content: flex-start; margin: 18px 0 10px; }
+  select, button { font: inherit; padding: 8px 12px; border: 1px solid #b6bfcc; border-radius: 6px; background: white; color: inherit; }
+  button { cursor: pointer; } button:disabled { opacity: .5; cursor: wait; }
+  .previews { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .preview-title { padding: 10px 12px; background: white; border-bottom: 1px solid #ccd2dc; }
+  .preview-title span { color: #596579; font-size: 13px; }
+  .pane { min-width: 0; border: 1px solid #ccd2dc; border-radius: 8px; overflow: hidden; }
+  .viewport { overflow: hidden; background: #101010; position: relative; }
+  iframe { width: 1280px; height: 720px; border: 0; transform-origin: top left; display: block; }
+  #status { margin: 18px 0 10px; font-weight: 600; }
+  .results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  article { padding: 14px; border: 1px solid #ccd2dc; border-radius: 8px; background: white; min-width: 0; }
+  article h2 { margin: 0 0 8px; font-size: 16px; text-transform: capitalize; }
+  article p { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+  .pass { color: #16713d; } .fail { color: #b22323; } .needs_review { color: #885c00; }
+  small { color: #596579; } pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+  details { margin-top: 12px; }
+  @media(max-width: 760px) { body { padding: 12px; } .previews, .results { grid-template-columns: 1fr; } }
+</style>
+<header><h1>Did the locked section survive?</h1><small id="lock"></small></header>
+<div class="toolbar">
+  <label for="case">Corpus page</label><select id="case" disabled></select>
+  <button id="run" disabled>Run validator again</button>
+  <button id="focus">Show locked section</button><button id="top">Show page top</button>
+</div>
+<p id="description">Loading corpus…</p>
+<div class="previews">
+  <section class="pane"><div class="preview-title"><strong>Original website</strong><span>Trusted clean page</span></div><div class="viewport"><iframe id="original" title="Original website" sandbox="allow-same-origin"></iframe></div></section>
+  <section class="pane"><div class="preview-title"><strong>Mutation page</strong><span id="page-name"></span></div><div class="viewport"><iframe id="mutation" title="Selected mutation page" sandbox="allow-same-origin"></iframe></div></section>
+</div>
+<small>Full website previews at 1280 × 720, scaled to fit. Scroll within either preview to explore. Corpus pages are deliberate test mutations.</small>
+<div id="status" role="status" aria-live="polite"></div>
+<div id="results" class="results"></div>
+<details><summary>Raw validator findings</summary><pre id="raw"></pre></details>
+<script type="module">
+  const $ = id => document.getElementById(id);
+  const frames = [$('original'), $('mutation')];
+  let cases = [], lockId, focused = true;
+  function scale() {
+    for (const frame of frames) {
+      const ratio = frame.parentElement.clientWidth / 1280;
+      frame.style.transform = `scale(${ratio})`;
+      frame.parentElement.style.height = `${720 * ratio}px`;
+    }
+  }
+  new ResizeObserver(scale).observe(document.body);
+  function position(frame) {
+    const doc = frame.contentDocument;
+    if (!doc) return;
+    const lock = [...doc.querySelectorAll('[data-locked]')].find(el => el.getAttribute('data-locked') === lockId);
+    frame.contentWindow.scrollTo(0, focused && lock ? lock.getBoundingClientRect().top + frame.contentWindow.scrollY - 32 : 0);
+  }
+  for (const frame of frames) frame.addEventListener('load', async () => {
+    const doc = frame.contentDocument;
+    const style = doc.createElement('style');
+    style.textContent = '*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:0s!important;transition-delay:0s!important}html{scroll-behavior:auto!important}';
+    doc.head.append(style);
+    doc.addEventListener('click', event => { if (event.target.closest('a')) event.preventDefault(); });
+    await doc.fonts.ready;
+    position(frame);
+  });
+  $('focus').onclick = () => { focused = true; frames.forEach(position); };
+  $('top').onclick = () => { focused = false; frames.forEach(position); };
+  async function validate() {
+    $('case').disabled = $('run').disabled = true;
+    $('results').replaceChildren(); $('raw').textContent = '';
+    $('status').textContent = 'Running validator…'; $('status').className = '';
+    try {
+      const response = await fetch(`/validate?page=${encodeURIComponent($('case').value)}`, { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      const verdict = data.findings.some(f => f.verdict === 'fail') ? 'fail' : data.findings.some(f => f.verdict === 'needs_review') ? 'needs_review' : 'pass';
+      $('status').textContent = `Actual verdict: ${verdict.toUpperCase()}`;
+      $('status').className = verdict;
+      for (const finding of data.findings) {
+        const card = document.createElement('article'), title = document.createElement('h2'), reason = document.createElement('p');
+        title.textContent = `${finding.rule} · ${finding.verdict.toUpperCase()}`; title.className = finding.verdict;
+        reason.textContent = finding.reason; card.append(title, reason); $('results').append(card);
+      }
+      $('raw').textContent = JSON.stringify(data.findings, null, 2);
+    } catch (error) { $('status').textContent = `Could not validate: ${error.message}`; }
+    finally { $('case').disabled = $('run').disabled = false; }
+  }
+  function selectCase() {
+    const item = cases.find(c => c.pageName === $('case').value);
+    $('description').textContent = `${item.summary} Expected: ${item.rule ? item.rule + ' failure' : 'all checks pass'}.`;
+    $('page-name').textContent = item.pageName;
+    $('mutation').src = `/preview?page=${encodeURIComponent(item.pageName)}`;
+    validate();
+  }
+  $('case').onchange = selectCase; $('run').onclick = validate;
+  try {
+    const response = await fetch('/cases');
+    if (!response.ok) throw new Error('Could not load corpus metadata.');
+    ({ cases, lockId } = await response.json());
+    $('lock').textContent = `Protected component: ${lockId}`;
+    for (const item of cases) $('case').add(new Option(item.pageName, item.pageName));
+    $('case').value = 'appearance-01.html';
+    $('original').src = '/preview?page=original';
+    selectCase(); scale();
+  } catch (error) { $('status').textContent = error.message; }
+</script>
+</html>

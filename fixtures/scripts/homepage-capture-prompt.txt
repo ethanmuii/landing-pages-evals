@@ -18,7 +18,9 @@ Requirements:
 4. Embed the actual required images, fonts, and other rendering assets as data
    URIs using their real bytes and MIME types. Preserve inline SVGs. Include
    resources referenced through CSS, srcset, and other resource-loading fields.
-   Do not fabricate Base64 data or substitute unavailable assets.
+   Do not fabricate Base64 data or substitute unavailable assets. Do not embed
+   video payloads: preserve their poster images and remove video src/source data
+   so the capture stays practical to store and render offline.
 5. The saved page must retain its captured appearance with networking disabled.
    Ensure client-side scripts cannot replace the captured content or require
    remote hydration to render it. Preserve ordinary navigation destinations;

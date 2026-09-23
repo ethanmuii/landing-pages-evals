@@ -52,10 +52,11 @@ const REFORMATTED_BODY_RULE = '\n/* corpus control 07 */\nbody {\n'
   + '  background-color: var(--color-black) !important;\n  font-weight: 500;\n'
   + '  letter-spacing: -0.36px;\n  color: var(--color-light-green) !important;\n}\n';
 
-function footerWithStyle(declaration: string): Edit {
+function footerWithStyle(declaration: string, styleDescendants = false): Edit {
   return {
     find: FOOTER_OPEN,
-    replace: `<footer class="relative " data-locked="modal-footer" style="${declaration}">`,
+    replace: `<footer class="relative " data-locked="modal-footer" style="${declaration}">`
+      + (styleDescendants ? `<style>[data-locked="modal-footer"] * { ${declaration} !important; }</style>` : ''),
   };
 }
 
@@ -121,32 +122,32 @@ export const MUTATIONS: readonly Mutation[] = [
   {
     pageName: 'appearance-01.html',
     rule: 'appearance',
-    summary: 'Sets the lock root text colour to rgb(9, 9, 9).',
-    edits: [footerWithStyle('color: rgb(9, 9, 9)')],
+    summary: 'Changes the footer text colour to bright red.',
+    edits: [footerWithStyle('color: rgb(255, 48, 48)', true)],
   },
   {
     pageName: 'appearance-02.html',
     rule: 'appearance',
-    summary: 'Sets the lock root background colour to rgb(9, 9, 9).',
-    edits: [footerWithStyle('background-color: rgb(9, 9, 9)')],
+    summary: 'Changes the footer background to purple.',
+    edits: [footerWithStyle('background-color: rgb(100, 30, 170)')],
   },
   {
     pageName: 'appearance-03.html',
     rule: 'appearance',
-    summary: 'Raises the lock root font size from 16px to 18px.',
-    edits: [footerWithStyle('font-size: 18px')],
+    summary: 'Sets the footer and its descendant text to 32px.',
+    edits: [footerWithStyle('font-size: 32px', true)],
   },
   {
     pageName: 'appearance-04.html',
     rule: 'appearance',
-    summary: 'Raises the lock root top padding from 0px to 4px.',
-    edits: [footerWithStyle('padding-top: 4px')],
+    summary: 'Adds 64px of top padding to the footer.',
+    edits: [footerWithStyle('padding-top: 64px')],
   },
   {
     pageName: 'appearance-05.html',
     rule: 'appearance',
-    summary: 'Raises the rendered height from 489.5px past the 1px tolerance via min-height.',
-    edits: [footerWithStyle('min-height: 491.5px')],
+    summary: 'Increases the footer minimum height from 489.5px to 689.5px.',
+    edits: [footerWithStyle('min-height: 689.5px')],
   },
   {
     pageName: 'position-01.html',
